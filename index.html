@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signature Creator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon"  href="/android-chrome-192x192.png">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+            padding-top: 20px;
+        }
+        .container {
+            max-width: 1000px;
+        }
+        .controls {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .canvas {
+            border: 2px solid #dee2e6;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .control-item {
+            margin-bottom: 0;
+        }
+        .control-label {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        .btn-group {
+            width: 100%;
+        }
+        .btn-group .btn {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Signature Creator</h1>
+        
+        <div class="controls">
+            <div class="row align-items-end">
+                <div class="col-md-3 control-item">
+                    <label for="colorPicker" class="control-label">Text color</label>
+                    <input class="form-control form-control-color" type="color" id="colorPicker" value="#000000">
+                </div>
+                <div class="col-md-3 control-item">
+                    <label for="canvasColor" class="control-label">Background</label>
+                    <input class="form-control form-control-color" type="color" id="canvasColor" value="#ffffff">
+                </div>
+                <div class="col-md-3 control-item">
+                    <label for="lineWidthSlider" class="control-label">Line thickness</label>
+                    <input type="range" class="form-range" id="lineWidthSlider" min="1" max="20" value="2">
+                </div>
+                <div class="col-md-3 control-item">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary" id="clearButton">Clear</button>
+                        <button type="button" class="btn btn-outline-primary" id="saveButton">Save</button>
+                        <button type="button" class="btn btn-outline-info" id="retrieveButton">Load</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <canvas class="canvas" id="myCanvas" width="1000" height="300"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('colorPicker');
+        const canvasColor = document.getElementById('canvasColor');
+        const lineWidthSlider = document.getElementById('lineWidthSlider');
+        const clearButton = document.getElementById('clearButton');
+        const saveButton = document.getElementById('saveButton');
+        const retrieveButton = document.getElementById('retrieveButton');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        function initCanvas() {
+            ctx.fillStyle = canvasColor.value;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = colorPicker.value;
+            ctx.lineWidth = lineWidthSlider.value;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+        }
+
+        initCanvas();
+
+        colorPicker.addEventListener('change', () => {
+            ctx.strokeStyle = colorPicker.value;
+        });
+
+        canvasColor.addEventListener('change', () => {
+            ctx.fillStyle = canvasColor.value;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        });
+
+        lineWidthSlider.addEventListener('input', () => {
+            ctx.lineWidth = lineWidthSlider.value;
+        });
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        clearButton.addEventListener('click', () => {
+            ctx.fillStyle = canvasColor.value;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        });
+
+        saveButton.addEventListener('click', () => {
+            localStorage.setItem('signature', canvas.toDataURL());
+            const link = document.createElement('a');
+            link.download = 'signature.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        retrieveButton.addEventListener('click', () => {
+            const savedSignature = localStorage.getItem('signature');
+            if (savedSignature) {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = savedSignature;
+            }
+        });
+    </script>
+</body>
+</html>
